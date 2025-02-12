@@ -27,9 +27,13 @@ function insertData(
     mixed $data
 ) : int {
     try {
+        $strCount = getNumberTableRows($pdo, $table['name']);
+
+        if ($strCount !== 0) {
+            return $strCount;
+        }
         $placeholders = array_fill(0, count($table['apiColumns']), '?');
         $query = 'INSERT INTO ' . $table['name'] . '(' . implode(', ', $table['tableColumns']) . ') VALUES (' . implode(', ', $placeholders) . ')';
-        $counter = 0;
 
         foreach ($data as $str) {
             $dataValues = [];
@@ -38,13 +42,20 @@ function insertData(
             }
             $insertQuery = $pdo->prepare($query);
             $insertQuery->execute($dataValues);
-            $counter += 1;
         }
+        $strCount = getNumberTableRows($pdo, $table['name']);
     } catch (PDOException $e) {
         echo 'Ошибка при вставке данных ' . $e->getMessage() . "\n";
     }
 
-    return $counter;
+    return $strCount;
+}
+
+function getNumberTableRows(PDO $pdo, string $tableName) {
+    $query = $pdo->prepare("SELECT COUNT(*) FROM $tableName");
+    $query->execute();
+    $count = $query->fetchColumn();
+    return $count;
 }
 
 function run() : void {
